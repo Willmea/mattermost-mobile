@@ -2,9 +2,11 @@
 // See LICENSE.txt for license information.
 
 import {withDatabase, withObservables} from '@nozbe/watermelondb/react';
-
+import {switchMap} from '@nozbe/watermelondb/utils/rx';
 import {observeChannel} from '@queries/servers/channel';
 import {observeCanDownloadFiles, observeConfigBooleanValue} from '@queries/servers/system';
+import {of as of$} from 'rxjs';
+import {observeCanDownloadFiles, observeConfigBooleanValue, observeCurrentTeamId} from '@queries/servers/system';
 
 import ChannelFiles from './channel_files';
 
@@ -16,8 +18,10 @@ type Props = WithDatabaseArgs & {
 
 const enhance = withObservables(['channelId'], ({channelId, database}: Props) => {
     const channel = observeChannel(database, channelId);
+    const teamId = channel.pipe(switchMap((c) => (c?.teamId ? of$(c.teamId) : observeCurrentTeamId(database))));
     return {
         channel,
+        teamId,
         canDownloadFiles: observeCanDownloadFiles(database),
         publicLinkEnabled: observeConfigBooleanValue(database, 'EnablePublicLink'),
     };
